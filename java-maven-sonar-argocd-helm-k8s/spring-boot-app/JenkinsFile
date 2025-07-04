@@ -60,11 +60,10 @@ pipeline {
          withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
             withEnv(["GIT_PUSH_URL=https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}"]) {
               sh """
-                cd java-maven-sonar-argocd-helm-k8s
-                sed -i 's|replaceImageTag|${BUILD_NUMBER}|g' spring-boot-app-manifests/deployment.yml
+                sed -i 's|replaceImageTag|${BUILD_NUMBER}|g' java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
                 git config user.email "milinrkanu999@gmail.com"
                 git config user.name "Milin Kanu"
-                git add spring-boot-app-manifests/deployment.yml
+                git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
                 git commit -m "Update deployment image to version ${BUILD_NUMBER}" || echo 'Nothing to commit'
                 git push \$GIT_PUSH_URL HEAD:main
               """
