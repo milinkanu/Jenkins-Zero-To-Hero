@@ -6,6 +6,12 @@ pipeline {
     }
   }
   stages {
+    stage('Debug Git Directory') {
+      steps {
+        sh 'pwd && ls -la'
+      }
+    }
+
     stage('Checkout') {
       steps {
         sh 'echo passed'
