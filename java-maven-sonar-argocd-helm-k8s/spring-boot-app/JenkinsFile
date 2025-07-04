@@ -8,21 +8,31 @@ pipeline {
   environment {
     GIT_REPO_NAME = "Jenkins-Zero-To-Hero"
     GIT_USER_NAME = "milinkanu"
+    WORKSPACE_DIR = "/var/lib/jenkins/workspace/ultimate-demo"
   }
   stages {
     stage('Checkout') {
       steps {
-        // Checkout the whole repository into the workspace root
+        // Checkout the entire repository into the workspace root
         git branch: 'main', url: 'https://github.com/milinkanu/Jenkins-Zero-To-Hero.git'
         sh 'ls -la' // Debug: Show workspace contents
       }
     }
+
+    stage('Prepare Git Safe Directory') {
+      steps {
+        // Fix for "dubious ownership" error
+        sh 'git config --global --add safe.directory $WORKSPACE_DIR'
+      }
+    }
+
     stage('Build and Test') {
       steps {
         sh 'ls -ltr'
         sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
       }
     }
+
     stage('Static Code Analysis') {
       environment {
         SONAR_URL = "http://54.157.217.111:9000"
@@ -33,6 +43,7 @@ pipeline {
         }
       }
     }
+
     stage('Build and Push Docker Image') {
       environment {
         DOCKER_IMAGE = "milinkanu1/ultimate-cicd:${BUILD_NUMBER}"
@@ -40,7 +51,6 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'docker-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           script {
-            // Build and push from workspace root
             sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
             sh 'docker build -t ${DOCKER_IMAGE} java-maven-sonar-argocd-helm-k8s/spring-boot-app'
             sh 'docker push ${DOCKER_IMAGE}'
@@ -48,15 +58,19 @@ pipeline {
         }
       }
     }
+
     stage('Update Deployment File') {
       steps {
         withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
           withEnv(["GIT_PUSH_URL=https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}"]) {
-            // All git commands must run from the repo root!
             sh '''
+              # Ensure safe.directory is set (in case of a new agent)
+              git config --global --add safe.directory $WORKSPACE_DIR
+
               echo "Current directory: $(pwd)"
               ls -la
               git status
+
               sed -i 's|replaceImageTag|${BUILD_NUMBER}|g' java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
               git config user.email "milinrkanu999@gmail.com"
               git config user.name "Milin Kanu"
