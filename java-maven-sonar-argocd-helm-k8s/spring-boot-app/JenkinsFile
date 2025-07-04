@@ -1,7 +1,7 @@
 pipeline {
   agent {
     docker {
-      image 'milinkanu1/maven-agent:v1'
+      image 'milinkanu1/maven-agent:v1-gitfix'
       args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
     }
   }
