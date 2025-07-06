@@ -14,7 +14,6 @@ spec:
       labels:
         app: spring-boot-app
     spec:
-      hostNetwork: true
       containers:
       - name: spring-boot-app
         image: milinkanu1/ultimate-cicd:31
